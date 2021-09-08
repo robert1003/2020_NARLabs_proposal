@@ -1,4 +1,5 @@
 import argparse
+import random
 import os
 import pandas as pd
 import numpy as np
@@ -53,11 +54,12 @@ def main():
     
     # get unique researchers, articles, countries, make it a mapping
     # convert each paper to (researcher_id, article_id, country_id)
-    researchers, articles, countries, name = assignId(df)
+    researchers, articles, countries, nationality, name = assignId(df)
 
     # add node to Network
     net['country'].add_nodes(list(countries.values()), label=list(countries.keys()))
-    net['researcher'].add_nodes(list(researchers.values()), label=list(researchers.keys()))
+    colors = defaultdict(lambda: "#%06x" % random.randint(0, 0xFFFFFF))
+    net['researcher'].add_nodes(list(researchers.values()), label=list(researchers.keys()), color=[colors[nationality[i]] for i in researchers.values()])
 
     # get adjacency matrix
     G_country = getAdjMatrix(df, 'country')

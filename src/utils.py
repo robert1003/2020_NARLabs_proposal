@@ -16,10 +16,14 @@ def assignId(df, addIdCol=True):
     countries = convert(df['Country'].unique().tolist(), colnum)
     name.update(inv_convert(countries, 'country'))
     colnum += len(countries)
+
+    nationality = {}
+    for i, j in zip(df['Fullname'], df['Country']):
+        nationality[researchers[i]] = countries[j]
     
     if addIdCol:
         df['Fullname_id'] = df['Fullname'].apply(lambda x: researchers[x])
         df['PaperTitle_id'] = df['PaperTitle'].apply(lambda x: articles[x])
         df['Country_id'] = df['Country'].apply(lambda x: countries[x])
 
-    return researchers, articles, countries, name
+    return researchers, articles, countries, nationality, name
