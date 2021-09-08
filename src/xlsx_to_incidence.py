@@ -14,6 +14,7 @@ def parse_args():
     parser.add_argument('--path', required=True)
     parser.add_argument('--sheet_name', required=True)
     parser.add_argument('--entry_topk', default=6, type=int)
+    parser.add_argument('--year', default=None, type=int)
 
     args = parser.parse_args()
 
@@ -26,6 +27,8 @@ def main():
     global args
     args = parse_args()
     df = pd.read_excel(args.path, engine='openpyxl', sheet_name=args.sheet_name)
+    if args.year:
+        df = df.loc['DBYear', args.year]
     
     # get unique researchers, articles, countries, make it a mapping
     colnum = 0
