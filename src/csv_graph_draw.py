@@ -48,8 +48,8 @@ def main():
 
     # Network
     net = {
-            'country': Network(height='600px', width='1300px'),
-            'researcher': Network(height='600px', width='1300px')
+            'country': Network(height='100%', width='100%'),
+            'researcher': Network(height='100%', width='100%')
         }
     
     # get unique researchers, articles, countries, make it a mapping
