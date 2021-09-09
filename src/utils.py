@@ -1,3 +1,6 @@
+from scipy.sparse import csr_matrix
+from scipy.sparse.linalg import eigs
+import itertools
 
 def assignId(df, addIdCol=True):
     colnum = 0
@@ -27,3 +30,14 @@ def assignId(df, addIdCol=True):
         df['Country_id'] = df['Country'].apply(lambda x: countries[x])
 
     return researchers, articles, countries, nationality, name
+
+def getSparseE(df):
+    indices = np.array(list(itertools.chain(*zip(df['Fullname_id'], df['PaperTitle_id'], df['Country_id']))))
+    indptr = np.arange(0, len(indices)+1, 3)
+    data = np.ones(indices.shape)
+    E = csr_matrix((data, indices, indptr), shape=(len(df), colnum))
+
+    return E
+
+def getSparseEigenTopk(E, k):
+    return eigs(E, k=k)

@@ -39,6 +39,27 @@ def getAdjMatrix(df, Type):
 
     return cnt
 
+def draw_country(net, df, countries):
+    net.add_nodes(list(countries.values()), label=list(countries.keys()))
+    G_country = getAdjMatrix(df, 'country')
+
+    # add edges to graph
+    for i in G_country:
+        for j in G_country[i]:
+            net.add_edge(i, j, value=G_country[i][j])
+
+def draw_researcher(net, df, researchers, nationality):
+    # add node to Network
+    colors = defaultdict(lambda: "#%06x" % random.randint(0, 0xFFFFFF))
+    net.add_nodes(list(researchers.values()), label=list(researchers.keys()), color=[colors[nationality[i]] for i in researchers.values()])
+
+    # get adjacency matrix
+    G_author = getAdjMatrix(df, 'researcher')
+
+    for i in G_author:
+        for j in G_author[i]:
+            net.add_edge(i, j, value=G_author[i][j])
+
 def main():
     global args
     args = parse_args()
@@ -46,39 +67,20 @@ def main():
     if args.year:
         df = df.loc[df['DBYear'] == args.year, :]
 
-    # Network
-    net = {
-            'country': Network(height='100%', width='100%'),
-            'researcher': Network(height='100%', width='100%')
-        }
-    
     # get unique researchers, articles, countries, make it a mapping
     # convert each paper to (researcher_id, article_id, country_id)
     researchers, articles, countries, nationality, name = assignId(df)
 
-    # add node to Network
-    net['country'].add_nodes(list(countries.values()), label=list(countries.keys()))
-    colors = defaultdict(lambda: "#%06x" % random.randint(0, 0xFFFFFF))
-    net['researcher'].add_nodes(list(researchers.values()), label=list(researchers.keys()), color=[colors[nationality[i]] for i in researchers.values()])
+    # draw and export
+    net = Network(height='100%', width='100%')
+    draw_country(net, df, countries)
+    net.show_buttons(filter_=True)
+    net.show('nodes_country.html')
 
-    # get adjacency matrix
-    G_country = getAdjMatrix(df, 'country')
-    G_author = getAdjMatrix(df, 'researcher')
-
-    # add edges to graph
-    for i in G_country:
-        for j in G_country[i]:
-            net['country'].add_edge(i, j, value=G_country[i][j])
-
-    for i in G_author:
-        for j in G_author[i]:
-            net['researcher'].add_edge(i, j, value=G_author[i][j])
-
-    # export graph
-    net['country'].show_buttons(filter_=True)
-    net['country'].show('nodes_country.html')
-    net['researcher'].show_buttons(filter_=True)
-    net['researcher'].show('nodes_researcher.html')
+    net = Network(height='100%', width='100%')
+    draw_researcher(net, df, researchers, nationality)
+    net.show_buttons(filter_=True)
+    net.show('nodes_researcher.html')
 
 if __name__ == '__main__':
     main()

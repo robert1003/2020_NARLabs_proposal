@@ -2,9 +2,6 @@ import pandas as pd
 import numpy as np
 import argparse
 from joblib import Parallel, delayed
-from scipy.sparse import csr_matrix
-from scipy.sparse.linalg import eigs
-import itertools
 import matplotlib.pyplot as plt
 
 def parse_args():
@@ -31,37 +28,14 @@ def main():
         df = df.loc['DBYear', args.year]
     
     # get unique researchers, articles, countries, make it a mapping
-    colnum = 0
-    name = {}
-    convert = lambda x, st: dict(zip(x, range(st, st + len(x))))
-    inv_convert = lambda x, name: dict(zip(x.values(), [(t, name) for t in x.keys()]))
-
-    researchers = convert(df['Fullname'].unique().tolist(), colnum)
-    name.update(inv_convert(researchers, 'researcher'))
-    colnum += len(researchers)
-
-    articles = convert(df['PaperTitle'].unique().tolist(), colnum)
-    name.update(inv_convert(articles, 'article'))
-    colnum += len(articles)
-
-    countries = convert(df['Country'].unique().tolist(), colnum)
-    name.update(inv_convert(countries, 'country'))
-    colnum += len(countries)
-
     # convert each paper to (researcher_id, article_id, country_id)
-    df['Fullname_id'] = df['Fullname'].apply(lambda x: researchers[x])
-    df['PaperTitle_id'] = df['PaperTitle'].apply(lambda x: articles[x])
-    df['Country_id'] = df['Country'].apply(lambda x: countries[x])
+    researchers, articles, countries, nationality, name = assignId(df)
 
     # create incidence (sparce) matrix
-    indices = np.array(list(itertools.chain(*zip(df['Fullname_id'], df['PaperTitle_id'], df['Country_id']))))
-    indptr = np.arange(0, len(indices)+1, 3)
-    data = np.ones(indices.shape)
-    E = csr_matrix((data, indices, indptr), shape=(len(df), colnum))
-    print('size of E =', E.shape)
+    E = getSparseE(df)
 
     # transpose and multiple it, then calculate the topk eigenvalues and vectors
-    vals, vecs = eigs(E.T @ E, k=10)
+    vals, vecs = getSparseEigenTopk(E.T @ E, k)
     print(vals.shape)
     print(vecs.shape)
 
