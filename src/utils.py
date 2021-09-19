@@ -1,6 +1,7 @@
 from scipy.sparse import csr_matrix
 from scipy.sparse.linalg import eigs
 import itertools
+import numpy as np
 
 def assignId(df, addIdCol=True):
     colnum = 0
@@ -31,7 +32,7 @@ def assignId(df, addIdCol=True):
 
     return researchers, articles, countries, nationality, name
 
-def getSparseE(df):
+def getSparseE(df, colnum):
     indices = np.array(list(itertools.chain(*zip(df['Fullname_id'], df['PaperTitle_id'], df['Country_id']))))
     indptr = np.arange(0, len(indices)+1, 3)
     data = np.ones(indices.shape)

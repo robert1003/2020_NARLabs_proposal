@@ -40,7 +40,7 @@ def getAdjMatrix(df, Type):
     return cnt
 
 def draw_country(net, df, countries):
-    net.add_nodes(list(countries.values()), label=list(countries.keys()))
+    net.add_nodes(list(countries.values()), label=list(countries.keys()), size=[5]*len(countries))
     G_country = getAdjMatrix(df, 'country')
 
     # add edges to graph
