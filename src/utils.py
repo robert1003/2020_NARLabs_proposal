@@ -1,5 +1,4 @@
 from scipy.sparse import csr_matrix
-from scipy.sparse.linalg import eigs
 import itertools
 import numpy as np
 

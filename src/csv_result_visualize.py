@@ -23,7 +23,7 @@ def main():
     global args
     args = parse_args()
     df = pd.read_csv(args.src)
-    cols = df['group'].unique()
+    cols = sorted(df['group'].unique())
 
     if args.group is not None:
         for col in args.group:
