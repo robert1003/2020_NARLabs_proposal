@@ -12,32 +12,34 @@ def parse_args():
 
     # Add argument
     parser.add_argument('--src', required=True)
-    parser.add_argument('--year', default=None, type=int)
+    parser.add_argument('--year', default=None)
 
     args = parser.parse_args()
 
     # Argument validation
     assert args.src.endswith('.csv')
+    if args.year:
+        args.year = list(map(int, args.year.strip().split(',')))
 
     return args
 
-def getAdjMatrix(df, Type):
+def getAdjMatrix(df, edge_col, col):
+    # get all the edges
     group = defaultdict(lambda: set())
-    for a, b, c in zip(df['Fullname_id'], df['PaperTitle_id'], df['Country_id']):
-        if Type == 'researcher':
-            group[b].add(a)
-        elif Type == 'country':
-            group[b].add(c)
-        else:
-            raise NotImplementedError()
+    for x, y in zip(df[edge_col], df[col]):
+        group[x].add(y)
+
+    # construct graph
     cnt = defaultdict(lambda: defaultdict(lambda: 0))
     for _, li in group.items():
+        # li are indices of each group connected by edge_col
         li = list(li)
         for i in range(len(li)):
             for j in range(i + 1, len(li)):
                 cnt[min(li[i], li[j])][max(li[i], li[j])] += 1
 
     return cnt
+
 
 def draw_country(net, df, countries):
     net.add_nodes(list(countries.values()), label=list(countries.keys()), size=[5]*len(countries))
@@ -48,39 +50,43 @@ def draw_country(net, df, countries):
         for j in G_country[i]:
             net.add_edge(i, j, value=G_country[i][j])
 
-def draw_researcher(net, df, researchers, nationality):
-    # add node to Network
-    colors = defaultdict(lambda: "#%06x" % random.randint(0, 0xFFFFFF))
-    net.add_nodes(list(researchers.values()), label=list(researchers.keys()), color=[colors[nationality[i]] for i in researchers.values()])
-
-    # get adjacency matrix
-    G_author = getAdjMatrix(df, 'researcher')
-
-    for i in G_author:
-        for j in G_author[i]:
-            net.add_edge(i, j, value=G_author[i][j])
-
 def main():
     global args
     args = parse_args()
     df = pd.read_csv(args.src)
     if args.year:
-        df = df.loc[df['DBYear'] == args.year, :]
+        df = df.loc[df['DBYear'].isin(args.year), :]
 
-    # get unique researchers, articles, countries, make it a mapping
-    # convert each paper to (researcher_id, article_id, country_id)
-    researchers, articles, countries, nationality, name = assignId(df)
+    # convert name to id
+    colName = ['Fullname', 'Country', 'FullOrgName']
+    nickName = ['Researcher', 'Country', 'Organization']
+    colPrefix='_id_'
+    colNameId = list(map(lambda x: colPrefix+x, colName))
+
+    name2id, id2name, id2type = assignId(df, colName, colPrefix=colPrefix)
+    researcherId2CountryId = getTwoColIdMapping(df, colPrefix+'Fullname', colPrefix+'Country')
+
 
     # draw and export
-    net = Network(height='100%', width='100%')
-    draw_country(net, df, countries)
-    net.show_buttons(filter_=True)
-    net.show('nodes_country.html')
+    for col, nick in zip(colName, nickName):
+        colors = defaultdict(lambda: "#%06x" % random.randint(0, 0xFFFFFF))
+        net = Network(height='100%', width='100%')
+        color = [colors[researcherId2CountryId[i]] for i in name2id[col].values()] if col == 'Fullname' else [colors[0]]*len(name2id[col])
 
-    net = Network(height='100%', width='100%')
-    draw_researcher(net, df, researchers, nationality)
-    net.show_buttons(filter_=True)
-    net.show('nodes_researcher.html')
+        net.add_nodes(
+            list(name2id[col].values()),
+            label=list(name2id[col].keys()),
+            size=[5]*len(name2id[col]),
+            color=color
+        )
+
+        G = getAdjMatrix(df, 'PaperTitle', colPrefix+col)
+        for i in G:
+            for j in G[i]:
+                net.add_edge(i, j, value=G[i][j])
+
+        net.show_buttons(filter_=True)
+        net.show('nodes_{}.html'.format(nick))
 
 if __name__ == '__main__':
     main()
