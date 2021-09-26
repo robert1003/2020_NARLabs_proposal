@@ -32,8 +32,8 @@ def main():
     
     # convert name to id
     colName = ['Fullname', 'Country', 'FullOrgName']
-    clusterCenter = [(args.size*30, -args.size*30), (0, args.size*30), (-args.size*30, -args.size*30)]
-    dirc = [(args.size*5, args.size*5), (0, -args.size*5), (args.size*5, -args.size*5)]
+    clusterCenter = [(args.size*30, -args.size*30), (0, args.size*50), (-args.size*30, -args.size*30)]
+    dirc = [(args.size*5, args.size*5), (0, -args.size*5), (-args.size*5, args.size*5)]
     nickName = ['Researcher', 'Country', 'Organization']
 
     # add edges
@@ -48,7 +48,7 @@ def main():
             # USA is so fat that it will affect other edges
             # thus we isolate its position to bottom right
             if name == 'USA':
-                pos[name] = (args.size*50, -args.size*50)
+                pos[name] = (0, -args.size*100)
             else:
                 pos[name] = (center[0]+d[0]*i, center[1]+d[1]*i)
 

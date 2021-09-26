@@ -35,7 +35,7 @@ def getAdjMatrix(df, edge_col, col):
         # li are indices of each group connected by edge_col
         li = list(li)
         for i in range(len(li)):
-            for j in range(i + 1, len(li)):
+            for j in range(i, len(li)):
                 cnt[min(li[i], li[j])][max(li[i], li[j])] += 1
 
     return cnt
@@ -73,17 +73,19 @@ def main():
         net = Network(height='100%', width='100%')
         color = [colors[researcherId2CountryId[i]] for i in name2id[col].values()] if col == 'Fullname' else [colors[0]]*len(name2id[col])
 
+        G = getAdjMatrix(df, 'PaperTitle', colPrefix+col)
+
         net.add_nodes(
             list(name2id[col].values()),
             label=list(name2id[col].keys()),
-            size=[5]*len(name2id[col]),
+            size=[max(5, min(50, 1*G[i][i])) for i in name2id[col].values()],
             color=color
         )
 
-        G = getAdjMatrix(df, 'PaperTitle', colPrefix+col)
         for i in G:
             for j in G[i]:
-                net.add_edge(i, j, value=G[i][j])
+                if i != j:
+                    net.add_edge(i, j, value=G[i][j])
 
         net.show_buttons(filter_=True)
         net.show('nodes_{}.html'.format(nick))
