@@ -33,11 +33,14 @@ def getTwoColIdMapping(df, col1, col2):
 
     return col1_to_col2
 
-def getSparseIncidenceMatrixFromId(df, cols, colnum):
+def getSparseIncidenceMatrixFromId(df, cols, colnum, rId):
     # convert our data to csr format
     # https://docs.scipy.org/doc/scipy/reference/generated/scipy.sparse.csr_matrix.html#scipy.sparse.csr_matrix
     data, colIndex, rowPtr = [], [], [0]
     for x in zip(*[df[col] for col in cols]):
+        # temp filter for testing centrality problem mentioned in 2021/12/21 meeting
+        #if rId[x[0]] != x[1]:
+        #    continue
         data.append([1] * len(x))
         colIndex.append(x)
         rowPtr.append(rowPtr[-1] + len(x))
@@ -45,7 +48,7 @@ def getSparseIncidenceMatrixFromId(df, cols, colnum):
     colIndex = np.hstack(colIndex)
 
     # create csr sparse matrix
-    return csr_matrix((data, colIndex, rowPtr), shape=(len(df), colnum))
+    return csr_matrix((data, colIndex, rowPtr))#shape=(len(df), colnum))
 
 def getTopkItemsFromLists(val, k, *lists):
     indices = np.array(val).argsort()[::-1][:k]

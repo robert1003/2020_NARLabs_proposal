@@ -43,9 +43,10 @@ def main():
 
     name2id, id2name, id2type = assignId(df, colName, colPrefix=colPrefix)
     researcherId2CountryId = getTwoColIdMapping(df, colPrefix+'Fullname', colPrefix+'Country')
+    orgId2CountryId = getTwoColIdMapping(df, colPrefix+'FullOrgName', colPrefix+'Country')
 
     # create incidence (sparce) matrix
-    E = getSparseIncidenceMatrixFromId(df, colNameId, len(id2name))
+    E = getSparseIncidenceMatrixFromId(df, colNameId, len(id2name), researcherId2CountryId)
 
     # transpose and multiple it, then calculate the topk eigenvalues and vectors
     vals, vecs = eigs(E.T@E, 1, which='LM')
@@ -54,10 +55,21 @@ def main():
     # get largest contributer in each colName
     maxEigenvalue = vals[0]
     maxEigenvector = np.abs(vecs.T[0])
+    print(np.linalg.norm(E.T@E@maxEigenvector - maxEigenvalue*maxEigenvector))
     result = getTopkItemsFromLists(maxEigenvector, len(maxEigenvector), id2name, id2type)
     _data = [[x[0]] + x[1] for x in result]
     print(*result[:5], sep='\n')
-    pd.DataFrame(_data, columns=['centrality', 'name', 'group']).to_csv(args.out, index=False)
+    df = pd.DataFrame(_data, columns=['centrality', 'name', 'group'])
+    
+    def f(x):
+        if x in name2id['Fullname']:
+            return id2name[researcherId2CountryId[name2id['Fullname'][x]]]
+        if x in name2id['FullOrgName']:
+            return id2name[orgId2CountryId[name2id['FullOrgName'][x]]]
+        return None
+    
+    df['country'] = df['name'].apply(f)
+    df.to_csv(args.out, index=False)
 
 if __name__ == '__main__':
     main()
