@@ -85,6 +85,8 @@ def main():
         for i in G:
             for j in G[i]:
                 if i != j:
+                    if max(G[i]) < 10 or max(G[j]) < 10:
+                        continue
                     net.add_edge(i, j, value=G[i][j])
 
         net.show_buttons(filter_=True)
