@@ -1,6 +1,7 @@
 from scipy.sparse import csr_matrix
 import itertools
 import numpy as np
+import pandas as pd
 from collections import defaultdict
 
 def assignId(df, cols, addIdCol=True, colPrefix='_id_'):
@@ -38,7 +39,7 @@ def getTwoColIdMapping(df, col1, col2, score_of_col2_elem=None):
 
     return col1_to_col2
 
-def getSparseIncidenceMatrixFromId(df, cols, colnum, filter_func=None, author_group=None): 
+def getSparseIncidenceMatrixFromId(df, cols, colnum, filter_func=None, author_group=None, node_weight=None): 
     # cols: column name
     # colnum: number of ids
     # rId: researcherId2CountryId
@@ -52,7 +53,12 @@ def getSparseIncidenceMatrixFromId(df, cols, colnum, filter_func=None, author_gr
         # connect researcher only to one country (2021/12/21 meeting)
         if filter_func is not None and filter_func(x):
             continue
-        data.append([1] * len(x))
+
+        if node_weight is None:
+            data.append([1.0] * len(x))
+        else:
+            data.append([1.0 if i not in node_weight else node_weight[i] for i in x])
+
         colIndex.append(x)
         rowPtr.append(rowPtr[-1] + len(x))
 
@@ -93,3 +99,31 @@ def getAdjMatrix(df, edge_col_name, col):
                 cnt[min(li[i], li[j])][max(li[i], li[j])] += 1
 
     return cnt
+
+def get_journal_factor(journal_col, name2id, factor_type):
+    if factor_type == 'simple':
+        df = pd.read_csv('./impact_factor/simple.csv')
+    elif factor_type == 'h_index':
+        df = pd.read_csv('./impact_factor/hindex.csv')
+    else:
+        assert False
+
+    def f(x):
+        # factor=0 error occurs for finding the corresponding factor
+        # view it as very unimportant
+        try:
+            if type(x) is str:
+                res = df[df['Journal'].apply(lambda y: x.lower() in y.lower())]
+                if pd.isna(res.iloc[0][2]):
+                    return 0
+                return res.iloc[0][2]
+            else:
+                return 0
+        except Exception as e:
+            return 0
+
+    journal2factor = {}
+    for i in journal_col.unique():
+        journal2factor[name2id[i]] = f(i)
+
+    return journal2factor
